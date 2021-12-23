@@ -163,24 +163,12 @@ sub psalmi_matutinum_monastic {
       return;
     }
 
-    my $ant;
-    my $p;
-    if ($psalmi[16] =~ /(.*?);;(.*)/s) {
-      $ant = $1;
-      $p = $2;
-    }
     my %w = (columnsel($lang)) ? %winner : %winner2;
     if (exists($w{"Ant Matutinum 3N"})) {
       my @t = split("\n",$w{"Ant Matutinum 3N"});
       for(my $i=0; $i <= $#t; $i++) { $psalmi[16+$i] = $t[$i]; }
     }
-    if ($psalmi[16] =~ /(.*?);;(.*)/s) {
-      $ant = $1;
-      $p = $2;
-    }
-    else {
-      $ant = $psalmi[16];
-    }
+    my ($ant, $p) = split(/;;/, $psalmi[16]);
     $p =~ s/[\(\-]/\,/g;
     $p =~ s/\)//g;
 
@@ -237,7 +225,7 @@ sub psalmi_matutinum_monastic {
     $w = $s{"MM Capitulum$name"};
   }
   postprocess_vr($w,$lang) if ($dayname[0] =~ /Pasc/);
-  push(@s, "!!Capitulum", $w, "\n");
+  push(@s, "!!Capitulum", $w, "\n", '$MLitany', "\n");
 }
 
 #*** antetpsal_mmm($line, $i)
