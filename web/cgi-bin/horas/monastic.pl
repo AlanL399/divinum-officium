@@ -79,7 +79,8 @@ sub psalmi_matutinum_monastic {
 
   #** change of versicle for Adv, Quad, Quad5, Pasc
   if ( ($winner =~ /tempora/i && $dayname[0] =~ /(Adv|Quad|Pasc)([0-9])/i)
-    || $dayname[0] =~ /(Nat)((?:0?[2-9])|(?:1[0-2]))$/ ) {
+    || $dayname[0] =~ /(Nat)((?:0?[2-9])|(?:1[0-2]))$/
+    || ($dayname[0] =~ /(Epi)1/ && $day > 6 && $day < 13)) {
     my $name = $1;
     my $i = $2;
     if ($name =~ /Nat/ && $i > 6 && $i < 13) { $name = 'Epi'; }
@@ -163,12 +164,15 @@ sub psalmi_matutinum_monastic {
       return;
     }
 
+    my ($ant, $p) = split(/;;/, $psalmi[16]);
     my %w = (columnsel($lang)) ? %winner : %winner2;
     if (exists($w{"Ant Matutinum 3N"})) {
       my @t = split("\n",$w{"Ant Matutinum 3N"});
       for(my $i=0; $i <= $#t; $i++) { $psalmi[16+$i] = $t[$i]; }
+      my($p1);
+      ($ant, $p1) = split(/;;/, $psalmi[16]);
+      $p = $p1 || $p;
     }
-    my ($ant, $p) = split(/;;/, $psalmi[16]);
     $p =~ s/[\(\-]/\,/g;
     $p =~ s/\)//g;
 
@@ -215,12 +219,14 @@ sub psalmi_matutinum_monastic {
       $w = $c{"MM Capitulum"};
     }
   }
+
   if (!$w) {
     my $name = "";
-    if ($dayname[0] =~ /(Adv|Nat|Quad|Pasc)/i) {
+    if ($dayname[0] =~ /(Adv|Nat|Epi1|Quad|Pasc)/i) {
       $name = " $1";
       if ($dayname[0] =~ /Quad[56]/i) { $name .= '5'; }
       if ($name eq ' Nat' && $day > 6 && $day < 13) { $name = ' Epi'; }
+      if ($name eq ' Epi1') { $name = ($day > 6 && $day < 13) ? ' Epi' : ''; }
     }
     $w = $s{"MM Capitulum$name"};
   }
