@@ -182,9 +182,6 @@ sub resolve_refs {
       }    #for special chars
     }
 
-    #cross
-    $line = setcross($line);
-
     # add dot if missing in Antiphona
     $line =~ s/(\w)$/$&./ if ($line =~ /^\s*Ant\./);
 
@@ -200,6 +197,9 @@ sub resolve_refs {
       }
       $line = setfont($redfont, $h) . $l;
     }
+
+    #cross
+    $line = setcross($line);
 
     #small omitted title
     if ($line =~ /^\s*\!\!\!(.*)/) {
@@ -219,7 +219,9 @@ sub resolve_refs {
     #red line
     elsif ($line =~ /^\s*\!(.*)/) {
       $l = $1;
-      $line = setfont($redfont, $l);
+      my $suffix = '';
+      if ($l =~ s/(\{[^:].*?\})//) { $suffix = setfont($smallblack, $1); }
+      $line = setfont($redfont, $l) . " $suffix\n";
     }
     $line =~ s{/:(.*?):/}{setfont($smallfont, $1)}e;
 
