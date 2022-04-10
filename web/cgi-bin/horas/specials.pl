@@ -166,6 +166,7 @@ sub specials {
         && $version !~ /1960/
         && $version !~ /monastic/i
         && $winner{Rank} =~ /Feria|Vigilia/i 
+        && $winner{Rank} !~ /Vigilia Epi/i
         && $commune !~ /C10/
         && ($rank < 3 || $dayname[0] =~ /Quad6/)
         && $dayname[0] !~ /Pasc/i)
@@ -282,7 +283,7 @@ sub specials {
       my $name =
           ($dayname[0] =~ /(Quad5|Quad6)/i) ? 'Quad5'
         : ($dayname[0] =~ /Quad/i && $dayname[0] !~ /Quadp/i) ? 'Quad'
-        : ($dayname[0] =~ /Quadp[3]/i && $dayofweek >= 3 && $version !~ /1960/) ? 'Per Annum'
+        : ($dayname[0] =~ /Quadp[3]/i && $dayofweek >= 3 && $version !~ /1960/) ? 'Feria'
         : ($dayname[0] =~ /Adv/i) ? 'Adv'
         : ($dayname[0] =~ /Pasc6/i || ($dayname[0] =~ /Pasc5/i && $dayofweek > 3)) ? 'Asc'
         : ($dayname[0] =~ /Pasc[0-6]/i) ? 'Pasc'
@@ -360,9 +361,8 @@ sub specials {
 
       ($hymn, $dname) = doxology($hymn, $lang);
       $section .= " {Doxology: $dname}" if ($dname && $section);
-      $hymn =~ s/^({.*})?(v. )?/v. /g;
       $hymn =~ s/\*\s*//g;
-      $hymn =~ s/_\n/_\nr. /g;
+      $hymn =~ s/_\n(?!!)/_\nr. /g;
       push(@s, "$section\n$hymn");
       push(@s, "\n_\n$versum") if $versum;
       next;
@@ -787,7 +787,7 @@ sub psalmi_minor {
   if ($ant) { $ant = "Ant. $ant"; }
   my @ant = split('\*', $ant);
   postprocess_ant($ant, $lang);
-  $ant1 = showFullAntiphon($version, $ant);
+  $ant1 = ($version !~ /1960|monastic/i) ? $ant[0] : $ant;    #difference between 1955 and 1960
   setcomment($label, 'Source', $comment, $lang, $prefix);
   $psalms =~ s/\s//g;
   @psalm = split(',', $psalms);
@@ -1018,17 +1018,6 @@ sub psalmi_major {
     }
   }
   return;
-}
-
-#*** showFullAntiphon(string $version, @ant): string
-sub showFullAntiphon {
-  my ($version, $ant) = @_;
-
-  if ($version !~ /1960|monastic|Praedicatorum/i) {
-      return $ant[0];
-  } else {
-      return $ant;
-  }
 }
 
 #*** antetpsalm($line, $i, $last, $lang)
@@ -1768,18 +1757,20 @@ sub tryoldhymn {
   $name1 = $name;
   $name1 =~ s/Hymnus\S*/$&M/;
 
-  if ($version =~ /(Monastic|1570|Praedicatorum)/i && $name =~ /Hymnus/i && exists($source{$name1})) {
+  if (($oldhymns || ($version =~ /(Monastic|1570|Praedicatorum)/i)) && $name =~ /Hymnus/i && exists($source{$name1})) {
     return $source{$name1};
   } else {
     return $source{$name};
   }
 }
 
+#*** checkmtv(version, winner)
+# after "Cum Nostra Hac Aetate", the verse has always changed
 sub checkmtv {
   my $version = shift;
   my $winner = shift;
   my %winner = %$winner;
-  ($version =~ /1955|1960/ || $winner{Rule} =~ /\;mtv/i) && $winner{Rule} =~ /C[45]/ ? '1' : '';
+  ($version =~ /1955|1960|Monastic/ || $winner{Rule} =~ /\;mtv/i) && $winner{Rule} =~ /C[45]/ ? '1' : '';
 }
 
 sub hymnusmajor {

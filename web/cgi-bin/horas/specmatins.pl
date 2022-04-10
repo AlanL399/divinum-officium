@@ -1018,6 +1018,13 @@ sub lectio : ScriptFunc {
     $w = "$before" . "\n$tuautem\n_\n$rest";
   }
 
+  # add initial to text
+  if ($w !~ /^!/m) {
+    $w =~ s/^(?=\p{Letter})/v. /;
+  } elsif ($w !~ /^\d/m) {
+    $w =~ s/^!.*?\n(?=\p{Letter})/$&v. /gm;
+  }
+
   #handle verse numbers for passages
   my $item = 'Lectio';
   if (exists($translate{$lang}{$item})) { $item = $translate{$lang}{$item}; }
@@ -1027,14 +1034,24 @@ sub lectio : ScriptFunc {
   my @w = split("\n", $w);
   $w = "";
 
-  foreach $item (@w) {
-    if ($item =~ /^([0-9]+)\s+(.*)/s) {
+  my $initial = $nonumbers;
+  foreach (@w) {
+    if (/^([0-9]+)\s+(.*)/s) {
       my $rest = $2;
-      my $num = $1;
-      if ($rest =~ /^\s*([a-z])(.*)/is) { $rest = uc($1) . $2; }
-      $item = setfont($smallfont, $num) . " $rest";
+      my $num = "\n" . setfont($smallfont, $1);
+      $rest =~ s/^./\u$&/ unless ($nonumbers);
+      if ($initial) {
+        $num = "\nv. ";
+        $initial = 0;
+      } elsif ($nonumbers) {
+        $num = '';
+      }
+      $_ = "$num $rest";
+    } else {
+      $initial = 1 if (/^!/ && $nonumbers);
+      $_ = "\n$_";
     }
-    $w .= "$item\n";
+    $w .= "$_";
   }
 
   if ($dayname[0] !~ /Pasc/i) {
