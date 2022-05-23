@@ -23,7 +23,7 @@ use Time::Local;
 #use DateTime;
 use locale;
 use lib "$Bin/..";
-use DivinumOfficium::Main qw(load_versions liturgical_color);
+use DivinumOfficium::Main qw(liturgical_color);
 $error = '';
 $debug = '';
 
@@ -272,27 +272,11 @@ PrintTag
 print << "PrintTag";
 </TABLE><BR>
 PrintTag
-my @versions = load_versions($datafolder);
-print option_selector("Version1", "document.forms[0].submit();", $ver[0], @versions);
+print htmlInput('version1', $ver[0], 'options', 'versions', , "document.forms[0].submit()");
 if ($compare) {
-  print option_selector("Version2", "document.forms[0].submit();", $ver[1], @versions);
+  print htmlInput('version2', $ver[1], 'options', 'versions', , "document.forms[0].submit()");
 }
-print << "PrintTag";
-<P ALIGN=CENTER>
-<A HREF="../../www/horas/Help/versions.html" TARGET="_BLANK">Versions</A>
-&nbsp;&nbsp;&nbsp;&nbsp;
-<A HREF="../../www/horas/Help/credits.html" TARGET="_BLANK">Credits</A>
-&nbsp;&nbsp;&nbsp;&nbsp;
-<A HREF="../../www/horas/Help/download.html" TARGET="_BLANK">Download</A>
-&nbsp;&nbsp;&nbsp;&nbsp;
-<A HREF="../../www/horas/Help/rubrics.html" TARGET="_BLANK">Rubrics</A>
-&nbsp;&nbsp;&nbsp;&nbsp;
-<A HREF="../../www/horas/Help/technical.html" TARGET="_BLANK">Technical</A>
-&nbsp;&nbsp;&nbsp;&nbsp;
-<A HREF="../../www/horas/Help/help.html" TARGET="_BLANK">Help</A>
-</FONT>
-</P>
-PrintTag
+print "<P ALIGN=CENTER>\n" . bottom_links_menu() . "</P>\n";
 
 # $testmode = 'Regular' unless $testmode;
 # print option_selector("testmode", "document.forms[0].submit();", $testmode, qw(Regular Seasonal));
