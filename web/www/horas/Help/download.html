@@ -48,11 +48,11 @@ apt install perl<BR>
 apt install git<BR>
 cpan CGI.pm<BR>
 cpan CGI::Session<BR>
-apt install python<BR>
+apt install python3<BR>
 git clone https://github.com/divinumofficium/divinum-officium<BR><BR>
 Once the divinum-officium repository has been cloned using Git, the following terminal syntax may be used:<BR><BR>
 cd ~/divinum-officium && git pull && cd web && python -m CGIHTTPServer<BR><BR>
-Depending on the version of Python you are using, the syntax "python -m http.server --cgi" (without quotes) may need to be used instead in order to start the server.<BR><BR>
+Depending on the version of Python you are using, the syntax "python3 -m http.server --cgi" (without quotes) may need to be used instead in order to start the server.<BR><BR>
 One may also need to adjust the path to the directory, provided the path ends in divinum-officium/web.<BR><BR>
 Once the server is active and running in the terminal window, navigate to (typically) 0.0.0.0:8000 in your browser. Divinum Officium should then be functional as on the live site.<BR>
 <H3 ALIGN=CENTER><FONT COLOR=MAROON>Hosting Locally: Apache</FONT></H3>
