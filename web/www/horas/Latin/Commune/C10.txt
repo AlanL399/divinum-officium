@@ -67,7 +67,7 @@ Concéde nos fámulos tuos, quǽsumus, Dómine Deus, perpétua mentis et córpor
 $Per Dominum
 
 [Invit]
-Ave, María, grátia plena; * Dóminus tecum.
+Ave María, grátia plena, * Dóminus tecum.
 
 [Hymnus Matutinum]
 @Commune/C11:Hymnus Matutinum
