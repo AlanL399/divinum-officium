@@ -523,6 +523,7 @@ sub getrank {
       %saint = %csaint;
       %csaint = %tempsaint;
       @srank = split(";;", $srank);
+      $srank[2] = 1 if ($version =~ /trident|divino/i && $tname =~ /Quadp3\-2/i);
       @crank = split(";;", $crank);
       $vflag = 1;
 
@@ -1482,6 +1483,7 @@ sub transfered {
   my $key;
 
   foreach $key (keys %transfer) {
+    next unless ($transfer{$key});
     if ($transfer{$key} =~ /Tempora/i && $transfer{$key} !~ /Epi1\-0/i) { next; }
 
     if ( $key !~ /(dirge|Hy)/i
