@@ -6,6 +6,7 @@ use utf8;
 # Divine Office fills the chapters from ordinarium
 $a = 4;
 
+use DivinumOfficium::Directorium qw(dirge);
 #*** specials(\@s, $lang)
 # input the array of the script for hora, and the language
 # fills the content of the various chapters from the databases
@@ -125,17 +126,11 @@ sub specials {
     }
 
     if ($item =~ /preces/i) {
-      $skipflag = preces($item);
-      $comment = ($skipflag) ? 1 : 0;
-      setcomment($label, 'Preces', $comment, $lang);
-
-      if ($skipflag) {
-        setbuild1($item, 'omit');
-      } else {
-        setbuild1($item, 'include');
-        if ($hora =~ /Laudes|Tertia|Sexta|Nona|Vespera/) {
-          push(@s, $prayers{$lang}{"Preces feriales $hora"});
-        }
+      $skipflag = !preces($item);
+      setcomment($label, 'Preces', $skipflag, $lang);
+      setbuild1($item, $skipflag ? 'omit' : 'include');
+      if (!$skipflag && $hora =~ /Laudes|Tertia|Sexta|Nona|Vespera/) {
+        push(@s, $prayers{$lang}{"Preces feriales $hora"});
       }
       next;
     }
@@ -507,15 +502,19 @@ sub specials {
       $skipflag = 1;
     }
 
-    # Set special conclusion when Office of the Dead follows.
-    if ($item =~ /Conclusio/i && $dirge && $commune !~ /C9/i && $votive !~ /C9/i) {
-      our %prayers;
 
-      if ($hora =~ /Vespera/i && $dirge == 1) {
+    # Set special conclusion when Office of the Dead follows.
+    if ($item =~ /Conclusio/i && $commune !~ /C9/i && $votive !~ /C9/i) {
+      our %prayers;
+      my $dirge = dirge($version, $hora, $day, $month, $year);
+
+      if (($dirge || ($winner{Rule} =~ /Vesperae Defunctorum/ && $vespera == 3)) 
+          && $hora =~ /Vespera/i) {
         push(@s, $prayers{$lang}->{DefunctV});
         setbuild1($item, 'Recite Vespera defunctorum');
         $skipflag = 1;
-      } elsif ($hora =~ /Laudes/i && $dirge == 2) {
+      } elsif (($dirge || $winner{Rule} =~ /Matutinum et Laudes Defunctorum/) 
+               && $hora =~ /Laudes/i) {
         push(@s, $prayers{$lang}->{DefunctM});
         setbuild1($item, 'Recite Officium defunctorum');
         $skipflag = 1;
@@ -564,50 +563,47 @@ sub translate_label {
 }
 
 #*** preces($item)
-# returns 0 = yes or 1 = omit after deciding about the preces
+# returns 1 = yes or 0 = omit after deciding about the preces
 sub preces {
+
+  return 0 if ( 
+    $winner =~ /C12/i 
+    || $rule =~ /Omit.*? Preces/i
+    || ($duplex > 2 && $seasonalflag) 
+    || $dayname[0] =~ /Pasc[67]/i
+  );
+
   my $item = shift;
-  my $dominicales = 0;
-  my $feriales = 0;
   our $precesferiales = 0;
-  if ($winner =~ /C12/i) { return 1; }    #Officium parvum BMV
-  if ($rule =~ /Omit.*? Preces/i) { return 1; }
-  if ($duplex > 2 && $seasonalflag) { return 1; }
-  $dominicales = 1;                       #taken off from Ordinary for 1955, 1960
-  if ($winner{Rank} =~ /octav/i && $winner{Rank} !~ /post octavam pente/i) { $dominicales = 0; }
-  if (checkcommemoratio(\%winner) =~ /Octav/i) { $dominicales = 0; }
 
-  if ($commemoratio) {
-    my @r = split(';;', $commemoratio{Rank});
+  if ($item =~ /Dominicales/i) {
+    my $dominicales = 1;
+    if ($commemoratio) {
+      my @r = split(';;', $commemoratio{Rank});
+      if ($r[2] >= 3 || $commemoratio{Rank} =~ /Octav/i || checkcommemoratio(\%commemoratio) =~ /octav/i) {
+        $dominicales = 0;
+      }
+    }
 
-    if ($r[2] >= 3 || $commemoratio{Rank} =~ /Octav/i || checkcommemoratio(\%commemoratio) =~ /octav/i) {
-      $dominicales = 0;
+    if ($dominicales
+        && ($winner{Rank} !~ /octav/i || $winner{Rank} =~ /post octav/i)
+        && checkcommemoratio(\%winner) !~ /Octav/i) {
+      $precesferiales = $hora =~ /prima/i;
+      return 1;
     }
   }
-  if ($dayofweek > 0 && (($dayname[0] =~ /(Adv|Quad)/i && $dayname[0] !~ /Quadp/i) || emberday())) { $feriales = 1; }
-  if ($winner =~ /sancti/i && $winner{Rank} !~ /vigil/i) { $feriales = 0; }
-  if ($dayname[0] =~ /pasc7/i && $dayofweek == 6) { $feriales = 0; }
-  if ($rule =~ /Preces/i) { $feriales = 1; }
 
-  if ($version =~ /(1955|1960|Newcal)/ && $feriales == 1) {
-    if ($dayofweek =~ /[1246]/ && !emberday()) { $feriales = 0; }
-  } elsif ($dayname[1] =~ /vigilia/i && $version !~ /(1955|1960|Newcal)/ && $dayname[1] !~ $dayname[1] !~ /(Epi|Pasc)/i) {
-    $feriales = 1;
-  }
-  if ($winner =~ /Sancti/i && $version =~ /(1955|1960|Newcal)/) { $feriales = 0; }
-  if ($dayname[1] =~ /dominica/i) { $feriales = 0; }
-  if ($dayname[0] =~ /Pasc[67]/i) { $feriales = $dominicales = 0; }
-
-  if ($feriales && $item =~ /Feriales/i) {
+  if ($item =~ /Feriales/i
+      && $dayofweek 
+      && ($winner !~ /sancti/i && ($rule =~ /Preces/i || $dayname[0] =~ /Adv|Quad(?!p)/i || emberday())
+          || ($version !~ /1955|1960|Newcal/ && $winner{Rank} =~ /vigil/i && $dayname[1] !~ /Epi|Pasc/i))
+      && ($version !~ /1955|1960|Newcal/ || $dayofweek =~ /[35]/ || emberday())
+     ) {
     $precesferiales = 1;
-    return 0;
+    return 1;
   }
 
-  if ($dominicales && $item =~ /Dominicales/i) {
-    if ($hora =~ /prima/i) { $precesferiales = 1; }
-    return 0;
-  }
-  return 1;
+  return 0;
 }
 
 #*** checkcommemoratio \%office
@@ -1413,7 +1409,8 @@ sub setcc {
   }    #Simplex=80;
   if ($s{Rule} =~ /Comkey=([0-9]+)/i) { $key = $1; }                                    #oct day Epi Cor = 20, simpl=70
 
-  if ( $s{Rank} =~ /Octav.*?(Epiph|Corporis|Cordis|Ascension)/i
+  if ( $s{Rank} =~ /Octav.*?(Epiph|Corporis)/i
+    || ($s{Rank} =~ /Octav.*?(Cordis|Ascension)/i && $dayofweek) # not in sunday
     || $str =~ /!.*?Octav.*?(Epiph|Corporis|Cordis|Ascension)/i
     || ($str =~ /!.*?Octav.*?Concept/i && ($winner !~ /tempora/i
                                           # or St. Damasy on Sunday
